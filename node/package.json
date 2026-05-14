@@ -3,6 +3,10 @@
   "//version": "Replaced by publish workflow on git tag push (v*)",
   "version": "0.1.0",
   "description": "Zero-config OpenTelemetry autoinstrumentation for Node.js CI pipelines",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rewireci/tracer.git"
+  },
   "type": "module",
   "exports": {
     ".": {
