@@ -1,0 +1,106 @@
+name: Publish
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  go:
+    name: Publish Go module
+    runs-on: ubuntu-latest
+    environment: publish
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go/go.mod
+          cache-dependency-path: go/go.sum
+      - name: Test
+        run: go test ./...
+        working-directory: go
+      - name: Trigger module proxy indexing
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          curl -sf "https://sum.golang.org/lookup/github.com/rewireci/tracer/go@${VERSION}" || true
+
+  node:
+    name: Publish to npm
+    runs-on: ubuntu-latest
+    environment: publish
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          registry-url: https://registry.npmjs.org
+          cache: npm
+          cache-dependency-path: node/package-lock.json
+      - run: npm ci
+        working-directory: node
+      - run: npm run build
+        working-directory: node
+      - name: Set version from tag
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          npm version --no-git-tag-version "${VERSION}"
+        working-directory: node
+      - run: npm publish --access public
+        working-directory: node
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  python:
+    name: Publish to PyPI
+    runs-on: ubuntu-latest
+    environment: publish
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Set version from tag
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          sed -i "s/^version = .*/version = \"${VERSION}\"/" pyproject.toml
+        working-directory: python
+      - name: Build
+        run: |
+          pip install uv
+          uv build
+        working-directory: python
+      - name: Publish
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: python/dist/
+
+  # ruby:
+  #   name: Publish to RubyGems
+  #   runs-on: ubuntu-latest
+  #   environment: publish
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: ruby/setup-ruby@v1
+  #       with:
+  #         working-directory: ruby
+  #         bundler-cache: true
+  #     - name: Set version from tag
+  #       run: |
+  #         VERSION=${GITHUB_REF_NAME#packages/ruby/v}
+  #         sed -i "s/VERSION = .*/VERSION = \"${VERSION}\"/" lib/rewire/tracer/version.rb
+  #       working-directory: ruby
+  #     - name: Build gem
+  #       run: gem build rewire-tracer.gemspec
+  #       working-directory: ruby
+  #     - name: Configure RubyGems credentials
+  #       run: |
+  #         mkdir -p ~/.gem
+  #         printf -- "---\n:rubygems_api_key: %s\n" "$RUBYGEMS_API_KEY" > ~/.gem/credentials
+  #         chmod 0600 ~/.gem/credentials
+  #       env:
+  #         RUBYGEMS_API_KEY: ${{ secrets.RUBYGEMS_API_KEY }}
+  #     - name: Push gem
+  #       run: gem push rewire-tracer-*.gem
+  #       working-directory: ruby
