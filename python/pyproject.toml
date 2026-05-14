@@ -1,0 +1,37 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "rewire-tracer"
+version = "0.1.0"
+description = "Zero-config OpenTelemetry autoinstrumentation for Python CI pipelines"
+requires-python = ">=3.9"
+dependencies = []
+
+[project.optional-dependencies]
+otel = [
+    "opentelemetry-sdk>=1.27.0",
+    "opentelemetry-exporter-otlp-proto-http>=1.27.0",
+]
+
+[project.entry-points."pytest11"]
+rewire_tracer = "rewire_tracer.pytest_plugin"
+
+[dependency-groups]
+dev = [
+    "hatchling>=1.27.0",
+    "opentelemetry-sdk>=1.27.0",
+    "opentelemetry-exporter-otlp-proto-http>=1.27.0",
+    "pytest>=8.0.0",
+    "ruff>=0.8.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]

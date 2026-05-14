@@ -1,0 +1,23 @@
+name: Publish (go)
+
+on:
+  push:
+    tags: ["packages/go/v*"]
+
+jobs:
+  publish:
+    name: Publish Go module
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go/go.mod
+          cache-dependency-path: go/go.sum
+      - name: Test
+        run: go test ./...
+        working-directory: go
+      - name: Trigger module proxy indexing
+        run: |
+          VERSION=${GITHUB_REF_NAME#packages/go/}
+          curl -sf "https://sum.golang.org/lookup/github.com/rewireci/tracer/go@${VERSION}" || true
