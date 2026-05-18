@@ -1,0 +1,20 @@
+{
+  "name": "rewire-tracer",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Zero-config OpenTelemetry autoinstrumentation for Node.js CI pipelines",
+  "scripts": {
+    "prepare": "cd node && npm install && npm run build"
+  },
+  "exports": {
+    ".": {
+      "import": "./node/dist/index.js",
+      "types": "./node/dist/index.d.ts"
+    },
+    "./register": {
+      "require": "./node/dist/register.cjs"
+    }
+  },
+  "files": ["node/dist"],
+  "engines": { "node": ">=20.0.0" }
+}
