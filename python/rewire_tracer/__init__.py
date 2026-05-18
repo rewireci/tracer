@@ -69,12 +69,10 @@ def init() -> Callable[[], None]:
 
         resource = Resource(attributes=resource_attrs)
         provider = TracerProvider(resource=resource)
-        if base_endpoint.endswith("/v1/traces"):
-            trace_endpoint = base_endpoint
-        elif base_endpoint.endswith("/otlp/v1/traces"):
-            trace_endpoint = base_endpoint
+        if endpoint:
+            trace_endpoint = f"{endpoint.rstrip('/')}/v1/traces"
         else:
-            trace_endpoint = f"{base_endpoint}/v1/traces"
+            trace_endpoint = f"{REWIRE_ENDPOINT}/traces"
         exporter = OTLPSpanExporter(
             endpoint=trace_endpoint,
             headers=headers,

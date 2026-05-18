@@ -97,7 +97,9 @@ export function init(): ShutdownFn {
     };
     if (ci.runId) resourceAttrs["run.id"] = ci.runId;
 
-    const traceUrl = endpoint ? baseUrl : `${baseUrl}/otlp/v1/traces`;
+    const traceUrl = endpoint
+      ? `${endpoint.replace(/\/$/, "")}/v1/traces`
+      : `${baseUrl}/otlp/v1/traces`;
 
     const sdk = new NodeSDK({
       traceExporter: new OTLPTraceExporter({

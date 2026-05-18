@@ -79,3 +79,27 @@ class TestInitWithRewireToken:
             stop = init()
         assert callable(stop)
         stop()
+
+    def test_configures_exporter_with_correct_traces_path(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setenv("REWIRE_TOKEN", "rwt_test")
+        captured: list[str] = []
+
+        from unittest.mock import patch
+
+        from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
+            OTLPSpanExporter,
+        )
+
+        original_init = OTLPSpanExporter.__init__
+
+        def capture_init(self: OTLPSpanExporter, *args: object, **kwargs: object) -> None:
+            captured.append(str(kwargs.get("endpoint", "")))
+            original_init(self, *args, **kwargs)
+
+        with patch.object(OTLPSpanExporter, "__init__", capture_init):
+            stop = init()
+        stop()
+        assert len(captured) == 1
+        assert captured[0] == "https://rewireci.com/otlp/v1/traces"

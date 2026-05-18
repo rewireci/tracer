@@ -75,12 +75,28 @@ RSpec.describe 'Rewire::Tracer.init' do
   end
 
   context 'with REWIRE_TOKEN set' do
-    before { ENV['REWIRE_TOKEN'] = 'rwt_test' }
+    before do
+      require 'opentelemetry/sdk'
+      require 'opentelemetry/exporter/otlp'
+      ENV['REWIRE_TOKEN'] = 'rwt_test'
+    end
 
     it 'initializes without error and returns a callable' do
       stop = Rewire::Tracer.init
       expect(stop).to respond_to(:call)
       stop.call
+    end
+
+    it 'configures the exporter with the correct otlp/v1/traces path' do
+      captured_endpoint = nil
+      allow(OpenTelemetry::Exporter::OTLP::Exporter).to receive(:new) do |args|
+        captured_endpoint = args[:endpoint]
+        OpenTelemetry::SDK::Trace::Export::SimpleSpanProcessor.new(
+          OpenTelemetry::SDK::Trace::Export::InMemorySpanExporter.new
+        )
+      end
+      Rewire::Tracer.init
+      expect(captured_endpoint).to eq('https://rewireci.com/otlp/v1/traces')
     end
   end
 end
