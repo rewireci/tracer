@@ -30,7 +30,7 @@ module Rewire
 
       begin
         ci = detect_ci
-        base_endpoint = endpoint || REWIRE_ENDPOINT
+        trace_url = endpoint ? "#{endpoint.chomp('/')}/v1/traces" : "#{REWIRE_ENDPOINT}/traces"
         headers = {}
         headers['Authorization'] = "Bearer #{token}" if !endpoint && token
 
@@ -45,7 +45,7 @@ module Rewire
           c.add_span_processor(
             OpenTelemetry::SDK::Trace::Export::BatchSpanProcessor.new(
               OpenTelemetry::Exporter::OTLP::Exporter.new(
-                endpoint: "#{base_endpoint}/v1/traces",
+                endpoint: trace_url,
                 headers: headers
               )
             )
